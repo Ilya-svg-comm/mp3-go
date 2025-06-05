@@ -1,0 +1,12 @@
+bind_addr = ":8080"
+log_level = "debug"
+
+[store]
+database_url = "host=192.168.145.66 dbname=player sslmode=disable password=postgres user=postgres"
+
+[minio]
+endpoint = "localhost:9000"
+access_key = "myuser"
+secret_key = "mypassword"
+bucket = "music"
+use_ssl = false
