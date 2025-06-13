@@ -10,11 +10,13 @@ type Store struct {
 	config          *Config
 	db              *sql.DB
 	trackRepository *TrackRepository
+	minioClient     *MinioClient
 }
 
-func New(config *Config) *Store {
+func New(config *Config, minioClient *MinioClient) *Store {
 	return &Store{
-		config: config,
+		config:      config,
+		minioClient: minioClient,
 	}
 }
 
@@ -38,10 +40,14 @@ func (s *Store) Track() *TrackRepository {
 
 	s.trackRepository = &TrackRepository{
 		store: s,
+		minio: s.minioClient,
 	}
 	return s.trackRepository
 }
 
 func (s *Store) Close() error {
+	if s.db != nil {
+		return s.db.Close()
+	}
 	return nil
 }

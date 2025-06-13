@@ -1,5 +1,5 @@
 bind_addr = ":8080"
-log_level = "debug"
+log_level = "trace"
 
 [store]
 database_url = "host=192.168.145.66 dbname=player sslmode=disable password=postgres user=postgres"

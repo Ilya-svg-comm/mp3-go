@@ -1,7 +1,9 @@
 package ui
 
-import "fyne.io/fyne/v2/widget"
+import (
+	"fyne.io/fyne/v2"
+)
 
-func ProfileTab() *widget.Label {
-	return widget.NewLabel("Профиль")
+func ProfileTab() *fyne.CanvasObject {
+	return nil
 }

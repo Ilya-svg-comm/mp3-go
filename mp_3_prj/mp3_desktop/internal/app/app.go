@@ -27,7 +27,8 @@ func (a *Application) Run() {
 	tabs := container.NewAppTabs(
 		container.NewTabItem("Музыка", ui.MusicTab()),
 		container.NewTabItem("Плейлисты", ui.PlayListsTab()),
-		container.NewTabItem("Профиль", ui.ProfileTab()),
+		container.NewTabItem("Загрузка трека", ui.NewUploadTab(a.Window)),
+		//container.NewTabItem("Профиль", ui.ProfileTab()),
 	)
 
 	a.Window.SetContent(tabs)
