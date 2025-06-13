@@ -2,49 +2,74 @@ package service
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"sync"
 
-	"github.com/faiface/beep"
-	"github.com/faiface/beep/mp3"
-	"github.com/faiface/beep/speaker"
+	"github.com/hajimehoshi/go-mp3"
+	"github.com/hajimehoshi/oto"
 )
 
 var (
-	ctrl        *beep.Ctrl
-	initialized bool
+	ctx        *oto.Context
+	player     oto.Player
+	initOnce   sync.Once
+	playerLock sync.Mutex
 )
+
+func initContext(sampleRate int) error {
+	var err error
+	initOnce.Do(func() {
+		ctx, err = oto.NewContext(sampleRate, 2, 2, 8192)
+	})
+	return err
+}
 
 func PlayAudio(url string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("http get: %w", err)
 	}
+	defer resp.Body.Close()
 
-	streamer, format, err := mp3.Decode(resp.Body)
+	decoder, err := mp3.NewDecoder(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return fmt.Errorf("decode mp3: %w", err)
 	}
 
-	if !initialized {
-		speaker.Init(format.SampleRate, format.SampleRate.N(512))
-		initialized = true
+	// Инициализируем контекст один раз
+	if err := initContext(decoder.SampleRate()); err != nil {
+		return fmt.Errorf("init oto context: %w", err)
 	}
 
-	StopAudio() // Остановим предыдущий, если был
+	playerLock.Lock()
+	defer playerLock.Unlock()
 
-	ctrl = &beep.Ctrl{Streamer: streamer, Paused: false}
-	speaker.Play(ctrl)
+	// Остановим предыдущий плеер, если есть
+
+	player = *ctx.NewPlayer()
+
+	buffer := make([]byte, 8192)
+	for {
+		n, err := decoder.Read(buffer)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return fmt.Errorf("read mp3: %w", err)
+		}
+		if n > 0 {
+			if _, err := player.Write(buffer[:n]); err != nil {
+				return fmt.Errorf("write audio: %w", err)
+			}
+		}
+	}
 
 	return nil
 }
 
 func StopAudio() {
-	speaker.Clear()
-	if ctrl != nil {
-		if closer, ok := ctrl.Streamer.(beep.StreamSeekCloser); ok {
-			_ = closer.Close()
-		}
-		ctrl = nil
-	}
+	playerLock.Lock()
+	defer playerLock.Unlock()
+
 }

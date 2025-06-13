@@ -10,16 +10,11 @@ import (
 )
 
 func MusicTab() fyne.CanvasObject {
-	tracks, _ := service.GetTracks("http://localhost:8080")
+	tracks, _ := service.GetTracks("http://192.168.145.66:8080")
 	var selectedIndex = -1
 
 	// Контролы
 	btnPlay := widget.NewButton("Play", nil)
-	btnStop := widget.NewButton("Stop", func() {
-		service.StopAudio()
-	})
-	btnPlay.Disable()
-
 	list := widget.NewList(
 		func() int { return len(tracks) },
 		func() fyne.CanvasObject { return widget.NewLabel("") },
@@ -36,14 +31,17 @@ func MusicTab() fyne.CanvasObject {
 		if selectedIndex < 0 {
 			return
 		}
-		url := fmt.Sprintf("http://localhost:8080/tracks/%d/audio", tracks[selectedIndex].ID)
-		err := service.PlayAudio(url)
-		if err != nil {
-			fmt.Println("Error playing:", err)
-		}
+		url := fmt.Sprintf("http://192.168.145.66:8080/tracks/%d/audio", tracks[selectedIndex].ID)
+		fmt.Println(url)
+		go func() {
+			err := service.PlayAudio(url)
+			if err != nil {
+				fmt.Println("Error playing:", err)
+			}
+		}()
 	}
 
-	controlBar := container.NewHBox(btnPlay, btnStop)
+	controlBar := container.NewHBox(btnPlay)
 
 	return container.NewBorder(
 		widget.NewLabelWithStyle("Список треков", fyne.TextAlignCenter, fyne.TextStyle{Bold: true}),
